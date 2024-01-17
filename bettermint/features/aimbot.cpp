@@ -1,16 +1,5 @@
 #include "features/aimbot.h"
-
-static inline Vector2<float> mouse_position()
-{
-    Vector2<float> mouse_pos(.0f, .0f);
-    uintptr_t osu_manager = *(uintptr_t*)(osu_manager_ptr);
-    if (!osu_manager) return mouse_pos;
-    uintptr_t osu_ruleset_ptr = *(uintptr_t*)(osu_manager + OSU_MANAGER_RULESET_PTR_OFFSET);
-    if (!osu_ruleset_ptr) return mouse_pos;
-    mouse_pos.x = *(float*)(osu_ruleset_ptr + OSU_RULESET_MOUSE_X_OFFSET);
-    mouse_pos.y = *(float*)(osu_ruleset_ptr + OSU_RULESET_MOUSE_Y_OFFSET);
-    return mouse_pos;
-}
+#include <cmath>
 
 static inline float easeInOutQuad(float t) {
     return t < 0.5 ? 2.0 * t * t : 1.0 - pow(-2.0 * t + 2.0, 2.0) / 2.0;
@@ -23,24 +12,25 @@ static inline float lerpWithEase(float a, float b, float t) {
 
 static inline void move_mouse_to_target(const Vector2<float> &target, const Vector2<float> &cursor_pos, float t) {
     Vector2 target_on_screen = playfield_to_screen(target);
+
+    float movement_variation = 2.0f;
+    target_on_screen.x += rand_range_f(-movement_variation, movement_variation);
+    target_on_screen.y += rand_range_f(-movement_variation, movement_variation);
+
     Vector2 predicted_position(lerpWithEase(cursor_pos.x, target_on_screen.x, t), lerpWithEase(cursor_pos.y, target_on_screen.y, t));
     move_mouse_to(predicted_position.x, predicted_position.y);
 }
 
-void update_aimbot(Circle &circle, const int32_t audio_time)
-{
+void update_aimbot(Circle &circle, const int32_t audio_time) {
     if (!cfg_aimbot_lock)
         return;
 
     float t = cfg_fraction_modifier * ImGui::GetIO().DeltaTime;
     Vector2 cursor_pos = mouse_position();
 
-    if (circle.type == HitObjectType::Circle)
-    {
+    if (circle.type == HitObjectType::Circle) {
         move_mouse_to_target(circle.position, cursor_pos, t);
-    }
-    else if (circle.type == HitObjectType::Slider)
-    {
+    } else if (circle.type == HitObjectType::Slider) {
         uintptr_t osu_manager = *(uintptr_t *)(osu_manager_ptr);
         if (!osu_manager) return;
         uintptr_t hit_manager_ptr = *(uintptr_t *)(osu_manager + OSU_MANAGER_HIT_MANAGER_OFFSET);
@@ -52,23 +42,26 @@ void update_aimbot(Circle &circle, const int32_t audio_time)
         float slider_ball_x = *(float *)(animation_ptr + OSU_ANIMATION_SLIDER_BALL_X_OFFSET);
         float slider_ball_y = *(float *)(animation_ptr + OSU_ANIMATION_SLIDER_BALL_Y_OFFSET);
         Vector2 slider_ball(slider_ball_x, slider_ball_y);
+        
+        float slider_variation = 5.0f;
+        slider_ball.x += rand_range_f(-slider_variation, slider_variation);
+        slider_ball.y += rand_range_f(-slider_variation, slider_variation);
+
         move_mouse_to_target(slider_ball, cursor_pos, t);
-    }
-    else if (circle.type == HitObjectType::Spinner && audio_time >= circle.start_time)
-    {
+    } else if (circle.type == HitObjectType::Spinner && audio_time >= circle.start_time) {
         auto& center = circle.position;
         constexpr float radius = 60.0f;
         constexpr float PI = 3.14159f;
         static float angle = .0f;
         Vector2 next_point_on_circle(center.x + radius * cosf(angle), center.y + radius * sinf(angle));
+
+        float spinner_variation = 10.0f;
+        next_point_on_circle.x += rand_range_f(-spinner_variation, spinner_variation);
+        next_point_on_circle.y += rand_range_f(-spinner_variation, spinner_variation);
+
         move_mouse_to_target(next_point_on_circle, cursor_pos, t);
-        float three_pi = 3 * PI;
-        if (cfg_timewarp_enabled)
-        {
-            auto timewarp_playback_rate = cfg_timewarp_playback_rate / 100.0;
-            if (timewarp_playback_rate > 1.0)
-                three_pi /= timewarp_playback_rate;
-        }
-        angle > 2 * PI ? angle = 0 : angle += cfg_spins_per_minute / three_pi * ImGui::GetIO().DeltaTime;
+
+        float spin_variation = 0.1f;
+        angle += cfg_spins_per_minute / (3 * PI) * ImGui::GetIO().DeltaTime + rand_range_f(-spin_variation, spin_variation);
     }
 }
