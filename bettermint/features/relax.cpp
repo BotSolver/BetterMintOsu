@@ -74,6 +74,7 @@ Vector2<float> mouse_position()
 void update_relax(Circle &circle, const int32_t audio_time)
 {
     static double keydown_time = 0.0;
+    float holding_max_duration = 0.2f;
 
     if (cfg_relax_lock)
     {
