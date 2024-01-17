@@ -1,6 +1,9 @@
 #include "features/relax.h"
 #include "window.h"
 
+float rand_range_f(float f_min, float f_max);
+int rand_range_i(int i_min, int i_max);
+
 float od_window = 5.f;
 float od_window_left_offset = .0f;
 float od_window_right_offset = .0f;
@@ -129,6 +132,16 @@ void update_relax(Circle &circle, const int32_t audio_time)
     }
 }
 
+float rand_range_f(float f_min, float f_max)
+{
+    float scale = rand() / (float)RAND_MAX;
+    return f_min + scale * (f_max - f_min);
+}
+
+int rand_range_i(int i_min, int i_max)
+{
+    return rand() % (i_max + 1 - i_min) + i_min;
+}
 
 void relax_on_beatmap_load()
 {
