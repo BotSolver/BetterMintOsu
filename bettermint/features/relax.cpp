@@ -90,21 +90,38 @@ void update_relax(Circle &circle, const int32_t audio_time)
         if (debug_relax)
         {
             ImGui::GetBackgroundDrawList()->AddCircleFilled(
-            ImVec2(screen_pos.x, screen_pos.y),
-            current_beatmap.scaled_hit_object_radius,
-            ImColor( 0, 255, 255, 100 ) );
+                ImVec2(screen_pos.x, screen_pos.y),
+                current_beatmap.scaled_hit_object_radius,
+                ImColor(0, 255, 255, 100));
         }
 
         if (valid_timing /* && valid_position */)
         {
             if (!circle.clicked)
             {
-                float delay_chance = 0.33f;
+                float delay_chance = 0.1f;
                 if (rand() / (float)RAND_MAX < delay_chance)
                 {
-                    float max_delay = 0.277f;
-                    float random_delay = rand_range_f(0.0f, max_delay);
-                    od_check_ms += random_delay;
+                    float early_max_delay = 0.6f;
+                    float late_max_delay = 0.5f;
+                    float holding_max_duration = 0.7f;
+
+                    float random_action = rand() / (float)RAND_MAX;
+                    if (random_action < 0.33f)
+                    {
+                        float random_early_delay = rand_range_f(0.0f, early_max_delay);
+                        od_check_ms -= random_early_delay;
+                    }
+                    else if (random_action < 0.66f)
+                    {
+                        float random_late_delay = rand_range_f(0.0f, late_max_delay);
+                        od_check_ms += random_late_delay;
+                    }
+                    else
+                    {
+                        float holding_duration = rand_range_f(0.0f, holding_max_duration);
+                        keyup_delay += holding_duration;
+                    }
                 }
 
                 if (cfg_relax_style == 'a')
