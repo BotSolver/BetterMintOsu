@@ -1,18 +1,5 @@
 #include "features/relax.h"
 #include "window.h"
-#include <cstdlib>
-
-static float rand_range_f(float f_min, float f_max)
-{
-    float scale = rand() / (float)RAND_MAX;
-    return f_min + scale * (f_max - f_min);
-}
-
-static int rand_range_i(int i_min, int i_max)
-{
-    return rand() % (i_max + 1 - i_min) + i_min;
-}
-
 
 float od_window = 5.f;
 float od_window_left_offset = .0f;
@@ -48,6 +35,7 @@ void calc_od_timing()
             static int wait_hitojects_count = rand_range_i(wait_hitobjects_min, wait_hitobjects_max);
             if (current_beatmap.hit_object_idx - hit_objects_passed >= wait_hitojects_count)
             {
+                // NOTE(Ciremun): move od window to the left
                 if (rand_range_i(0, 1) >= 1)
                     jumping_window_offset = rand_range_f(.1337f, od_window - od_window_left_offset);
                 else
@@ -73,6 +61,9 @@ Vector2<float> mouse_position()
 
 void update_relax(Circle &circle, const int32_t audio_time)
 {
+    static double keydown_time = 0.0;
+    static double keyup_delay = 0.0;
+
     if (cfg_relax_lock)
     {
         calc_od_timing();
@@ -92,26 +83,50 @@ void update_relax(Circle &circle, const int32_t audio_time)
                 ImColor(0, 255, 255, 100));
         }
 
-        if (valid_timing && valid_position && !circle.clicked)
+        if (valid_timing /* && valid_position */)
         {
-            float random_action = rand() / (float)RAND_MAX;
-
-            if (random_action < 0.5f)
+            if (!circle.clicked)
             {
+                float alternating_chance = 0.4f;
+                if (rand() / (float)RAND_MAX < alternating_chance)
+                {
+                    current_click = rand() / (float)RAND_MAX < 0.5 ? left_click[0] : right_click[0];
+                }
+                else
+                {
+                    if (cfg_relax_style == 'a')
+                        current_click = current_click == left_click[0] ? right_click[0] : left_click[0];
+                }
+
                 send_keyboard_input(current_click, 0);
                 FR_INFO_FMT("Relax hit %d!, %d %d", current_beatmap.hit_object_idx, circle.start_time, circle.end_time);
-            }
+                keyup_delay = circle.end_time ? circle.end_time - circle.start_time : 0.5;
 
-            if (cfg_relax_style == 'a')
-            {
-                current_click = rand() / (float)RAND_MAX < 0.5 ? left_click[0] : right_click[0];
+                if (cfg_timewarp_enabled)
+                {
+                    double timewarp_playback_rate_div_100 = cfg_timewarp_playback_rate / 100.0;
+                    keyup_delay /= timewarp_playback_rate_div_100;
+                }
+                else if (circle.type == HitObjectType::Slider || circle.type == HitObjectType::Spinner)
+                {
+                    if (current_beatmap.mods & Mods::DoubleTime)
+                        keyup_delay /= 1.5;
+                    else if (current_beatmap.mods & Mods::HalfTime)
+                        keyup_delay /= 0.75;
+                }
+                keydown_time = ImGui::GetTime();
+                circle.clicked = true;
+                od_check_ms = .0f;
             }
-
-            circle.clicked = true;
-            od_check_ms = .0f;
         }
     }
+    if (cfg_relax_lock && keydown_time && ((ImGui::GetTime() - keydown_time) * 1000.0 > keyup_delay))
+    {
+        keydown_time = 0.0;
+        send_keyboard_input(current_click, KEYEVENTF_KEYUP);
+    }
 }
+
 
 void relax_on_beatmap_load()
 {
