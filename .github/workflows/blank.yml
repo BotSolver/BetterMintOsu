@@ -1,0 +1,33 @@
+name: build-bettermint
+on:
+  push:
+    paths:
+    - 'bettermint/**'
+    - 'imgui/**'
+    - 'include/**'
+  workflow_dispatch:
+    paths:
+      - 'bettermint/**'
+      - 'imgui/**'
+      - 'include/**'
+
+jobs:
+  windows-msvc:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: Ciremun/gha-setup-vsdevenv@avoid-deprecation-warnings
+        with:
+          arch: 'x86'
+      - name: build
+        shell: cmd
+        run: |
+          cl nobuild.c && nobuild.exe
+      - name: bettermint
+        uses: actions/upload-artifact@v3
+        with:
+          name: bettermint
+          path: |
+            bettermint_injector.exe
+            bettermint.dll
+            config.ini
