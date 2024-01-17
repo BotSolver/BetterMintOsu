@@ -90,7 +90,8 @@ void update_relax(Circle &circle, const int32_t audio_time)
         {
             if (!circle.clicked)
             {
-                float alternating_chance = 0.2f;
+                // Introduce more unstable alternating clicks
+                float alternating_chance = 0.3f; // 30% chance of alternating
                 if (rand() / (float)RAND_MAX < alternating_chance)
                 {
                     current_click = rand() / (float)RAND_MAX < 0.5 ? left_click[0] : right_click[0];
@@ -98,14 +99,33 @@ void update_relax(Circle &circle, const int32_t audio_time)
                 else
                 {
                     if (cfg_relax_style == 'a')
-                        current_click = current_click == left_click[0] ? right_click[0] : left_click[0];
+                    {
+                        float more_unstable_chance = 0.4f; // 40% chance of being more unstable
+                        if (rand() / (float)RAND_MAX < more_unstable_chance)
+                        {
+                            // Simulate more unstable timing for alternating clicks
+                            float more_unstable_variation = rand_range_f(0.1f, 0.3f);
+                            current_click = current_click == left_click[0] ? right_click[0] : left_click[0];
+                            keydown_time = ImGui::GetTime() - more_unstable_variation;
+                        }
+                        else
+                        {
+                            current_click = current_click == left_click[0] ? right_click[0] : left_click[0];
+                        }
+                    }
                 }
 
-                float reaction_time_variation = rand_range_f(0.05f, 0.15f);
+                // Simulate more unstable reaction time
+                float reaction_time_variation = rand_range_f(0.1f, 0.2f);
                 send_keyboard_input(current_click, 0);
                 FR_INFO_FMT("Relax hit %d!, %d %d", current_beatmap.hit_object_idx, circle.start_time, circle.end_time);
 
+                // Adjust keyup delay based on more unstable reaction time for a more human-like scoring
                 keyup_delay = circle.end_time ? circle.end_time - circle.start_time + reaction_time_variation : 0.5;
+
+                // Simulate more human-like holding time with variations
+                float holding_time_variation = rand_range_f(0.05f, 0.15f);
+                keyup_delay += holding_time_variation;
 
                 if (cfg_timewarp_enabled)
                 {
