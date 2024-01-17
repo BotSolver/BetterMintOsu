@@ -74,7 +74,8 @@ Vector2<float> mouse_position()
 void update_relax(Circle &circle, const int32_t audio_time)
 {
     static double keydown_time = 0.0;
-    float holding_max_duration = 0.2f;
+    float holding_max_duration = 0.111f;
+    float holding_chance = 0.1f;
 
     if (cfg_relax_lock)
     {
@@ -99,8 +100,6 @@ void update_relax(Circle &circle, const int32_t audio_time)
         {
             if (!circle.clicked)
             {
-                float holding_max_duration = 0.2f;
-
                 if (circle.type == HitObjectType::Slider || circle.type == HitObjectType::Spinner)
                 {
                     keydown_time = ImGui::GetTime();
@@ -110,7 +109,7 @@ void update_relax(Circle &circle, const int32_t audio_time)
                 else
                 {
                     float random_action = rand() / (float)RAND_MAX;
-                    if (random_action < 0.5f)
+                    if (random_action < holding_chance)
                     {
                         float holding_duration = rand_range_f(0.0f, holding_max_duration);
                         keydown_time = ImGui::GetTime();
