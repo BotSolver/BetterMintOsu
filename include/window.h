@@ -4,7 +4,7 @@
 
 #include "mem.h"
 #include "vector.h"
-#include "freedom.h"
+#include "bettermint.h"
 
 extern uintptr_t window_manager_code_start;
 extern uintptr_t window_manager_offset;
