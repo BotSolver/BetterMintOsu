@@ -12,15 +12,18 @@ static inline Vector2<float> mouse_position()
     return mouse_pos;
 }
 
-static inline float lerp(float a, float b, float t)
-{
+static inline float easeInOutQuad(float t) {
+    return t < 0.5 ? 2.0 * t * t : 1.0 - pow(-2.0 * t + 2.0, 2.0) / 2.0;
+}
+
+static inline float lerpWithEase(float a, float b, float t) {
+    t = easeInOutQuad(t);
     return a + t * (b - a);
 }
 
-static inline void move_mouse_to_target(const Vector2<float> &target, const Vector2<float> &cursor_pos, float t)
-{
+static inline void move_mouse_to_target(const Vector2<float> &target, const Vector2<float> &cursor_pos, float t) {
     Vector2 target_on_screen = playfield_to_screen(target);
-    Vector2 predicted_position(lerp(cursor_pos.x, target_on_screen.x, t), lerp(cursor_pos.y, target_on_screen.y, t));
+    Vector2 predicted_position(lerpWithEase(cursor_pos.x, target_on_screen.x, t), lerpWithEase(cursor_pos.y, target_on_screen.y, t));
     move_mouse_to(predicted_position.x, predicted_position.y);
 }
 
