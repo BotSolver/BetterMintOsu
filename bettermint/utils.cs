@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
 
-namespace Freedom
+namespace bettermint
 {
     public class Utils
     {

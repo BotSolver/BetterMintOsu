@@ -93,7 +93,7 @@ void get_classmethods_from_addrs()
     variant.vt = VT_I4;
     variant.intVal = classmethod_types_count;
     SafeArrayPutElement(params, &i, &variant);
-    VARIANT v = invoke_csharp_method(L"Freedom.Utils", L"ClassMethodsFromAddrs", params);
+    VARIANT v = invoke_csharp_method(L"bettermint.Utils", L"ClassMethodsFromAddrs", params);
     if (variant_ok(&v) && v.intVal == 1)
     {
         cm_load_s =             get_utf8_for_classmethod(classmethods[0].class_, classmethods[0].method, classmethods[0].type);
@@ -119,13 +119,13 @@ static inline bool set_classmethods_from_strings()
     std::wstring cm_checktime_ws = get_utf16(cm_checktime_s);
     std::wstring cm_updatevariables_ws = get_utf16(cm_updatevariables_s);
 #define RETURN_IF_FALSE() if (variant_ok(&v) && v.intVal != 1) return false
-    v = invoke_csharp_method(L"Freedom.Utils", L"SetClassMethod", cm_load_ws.c_str());             RETURN_IF_FALSE();
-    v = invoke_csharp_method(L"Freedom.Utils", L"SetClassMethod", cm_replay_ws.c_str());           RETURN_IF_FALSE();
-    v = invoke_csharp_method(L"Freedom.Utils", L"SetClassMethod", cm_score_ws.c_str());            RETURN_IF_FALSE();
-    v = invoke_csharp_method(L"Freedom.Utils", L"SetClassMethod", cm_checkflashlight_ws.c_str());  RETURN_IF_FALSE();
-    v = invoke_csharp_method(L"Freedom.Utils", L"SetClassMethod", cm_updateflashlight_ws.c_str()); RETURN_IF_FALSE();
-    v = invoke_csharp_method(L"Freedom.Utils", L"SetClassMethod", cm_checktime_ws.c_str());        RETURN_IF_FALSE();
-    v = invoke_csharp_method(L"Freedom.Utils", L"SetClassMethod", cm_updatevariables_ws.c_str());  RETURN_IF_FALSE();
+    v = invoke_csharp_method(L"bettermint.Utils", L"SetClassMethod", cm_load_ws.c_str());             RETURN_IF_FALSE();
+    v = invoke_csharp_method(L"bettermint.Utils", L"SetClassMethod", cm_replay_ws.c_str());           RETURN_IF_FALSE();
+    v = invoke_csharp_method(L"bettermint.Utils", L"SetClassMethod", cm_score_ws.c_str());            RETURN_IF_FALSE();
+    v = invoke_csharp_method(L"bettermint.Utils", L"SetClassMethod", cm_checkflashlight_ws.c_str());  RETURN_IF_FALSE();
+    v = invoke_csharp_method(L"bettermint.Utils", L"SetClassMethod", cm_updateflashlight_ws.c_str()); RETURN_IF_FALSE();
+    v = invoke_csharp_method(L"bettermint.Utils", L"SetClassMethod", cm_checktime_ws.c_str());        RETURN_IF_FALSE();
+    v = invoke_csharp_method(L"bettermint.Utils", L"SetClassMethod", cm_updatevariables_ws.c_str());  RETURN_IF_FALSE();
 #undef RETURN_IF_FALSE
     ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
     FR_INFO("[+] All classmethods are set");
@@ -139,7 +139,7 @@ bool prepare_all_methods_fast()
         FR_INFO("[!] Failed to set some classmethods, fallback to slow method");
         return false;
     }
-    VARIANT v = invoke_csharp_method(L"Freedom.Utils", L"prepare_all_methods_fast");
+    VARIANT v = invoke_csharp_method(L"bettermint.Utils", L"prepare_all_methods_fast");
     if (variant_ok(&v) && v.intVal == 1)
     {
         prepared_methods = true;
@@ -151,7 +151,7 @@ bool prepare_all_methods_fast()
 bool prepare_all_methods_slow()
 {
     double s = ImGui::GetTime();
-    invoke_csharp_method(L"Freedom.Utils", L"prepare_all_methods_slow");
+    invoke_csharp_method(L"bettermint.Utils", L"prepare_all_methods_slow");
     FR_INFO_FMT("Preparing All Methods Slow Took: %lfs", ImGui::GetTime() - s);
     prepared_all_methods = true;
     prepared_methods = true;

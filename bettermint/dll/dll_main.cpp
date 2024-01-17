@@ -182,7 +182,7 @@ static inline bool GetD3D9Device(void **pTable, size_t Size)
     return true;
 }
 
-DWORD WINAPI freedom_main(HMODULE hModule)
+DWORD WINAPI bettermint_main(HMODULE hModule)
 {
     g_module = hModule;
 
@@ -212,6 +212,6 @@ DWORD WINAPI freedom_main(HMODULE hModule)
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
     if (ul_reason_for_call == DLL_PROCESS_ATTACH)
-        CloseHandle(CreateThread(0, 0, (LPTHREAD_START_ROUTINE)freedom_main, hModule, 0, 0));
+        CloseHandle(CreateThread(0, 0, (LPTHREAD_START_ROUTINE)bettermint_main, hModule, 0, 0));
     return TRUE;
 }

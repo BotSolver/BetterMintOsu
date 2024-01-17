@@ -6,7 +6,7 @@
 
 #include "scan.h"
 #include "font.h"
-#include "freedom.h"
+#include "bettermint.h"
 #include "config.h"
 #include "input.h"
 #include "hitobject.h"

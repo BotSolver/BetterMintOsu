@@ -84,7 +84,7 @@ int main(int, char**)
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 #endif
 
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "Freedom Standalone", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(1280, 720, "bettermint Standalone", NULL, NULL);
     if (window == NULL)
         return 1;
     glfwMakeContextCurrent(window);
