@@ -73,10 +73,6 @@ Vector2<float> mouse_position()
 
 void update_relax(Circle &circle, const int32_t audio_time)
 {
-    static double keydown_time = 0.0;
-    float holding_max_duration = 0.111f;
-    float holding_chance = 0.1f;
-
     if (cfg_relax_lock)
     {
         calc_od_timing();
@@ -96,44 +92,23 @@ void update_relax(Circle &circle, const int32_t audio_time)
                 ImColor(0, 255, 255, 100));
         }
 
-        if (valid_timing && valid_position)
+        if (valid_timing && valid_position && !circle.clicked)
         {
-            if (!circle.clicked)
+            float random_action = rand() / (float)RAND_MAX;
+
+            if (random_action < 0.5f)
             {
-                if (circle.type == HitObjectType::Slider || circle.type == HitObjectType::Spinner)
-                {
-                    keydown_time = ImGui::GetTime();
-                    send_keyboard_input(current_click, 0);
-                    FR_INFO_FMT("Relax hit %d!, %d %d", current_beatmap.hit_object_idx, circle.start_time, circle.end_time);
-                }
-                else
-                {
-                    float random_action = rand() / (float)RAND_MAX;
-                    if (random_action < holding_chance)
-                    {
-                        float holding_duration = rand_range_f(0.0f, holding_max_duration);
-                        keydown_time = ImGui::GetTime();
-                        send_keyboard_input(current_click, 0);
-                        FR_INFO_FMT("Relax hit %d!, %d %d", current_beatmap.hit_object_idx, circle.start_time, circle.end_time);
-                    }
-                }
-
-                if (cfg_relax_style == 'a')
-                {
-                    current_click = rand() / (float)RAND_MAX < 0.5 ? left_click[0] : right_click[0];
-                }
-
-                circle.clicked = true;
-                od_check_ms = .0f;
+                send_keyboard_input(current_click, 0);
+                FR_INFO_FMT("Relax hit %d!, %d %d", current_beatmap.hit_object_idx, circle.start_time, circle.end_time);
             }
-        }
-    }
-    if (cfg_relax_lock && keydown_time)
-    {
-        if ((ImGui::GetTime() - keydown_time) * 1000.0 > holding_max_duration && circle.type != HitObjectType::Slider && circle.type != HitObjectType::Spinner)
-        {
-            keydown_time = 0.0;
-            send_keyboard_input(current_click, KEYEVENTF_KEYUP);
+
+            if (cfg_relax_style == 'a')
+            {
+                current_click = rand() / (float)RAND_MAX < 0.5 ? left_click[0] : right_click[0];
+            }
+
+            circle.clicked = true;
+            od_check_ms = .0f;
         }
     }
 }
