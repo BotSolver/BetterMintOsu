@@ -95,57 +95,59 @@ void update_relax(Circle &circle, const int32_t audio_time)
                 ImColor(0, 255, 255, 100));
         }
 
-        if (valid_timing /* && valid_position */)
+        if (valid_timing && valid_position)
         {
             if (!circle.clicked)
             {
-                float delay_chance = 0.1f;
+                float delay_chance = 0.1f; // Adjust the chance based on your preference
                 if (rand() / (float)RAND_MAX < delay_chance)
                 {
-                    float early_max_delay = 0.6f;
-                    float late_max_delay = 0.5f;
-                    float holding_max_duration = 0.7f;
+                    float early_max_delay = 0.6f;    // Maximum delay for clicking early
+                    float late_max_delay = 0.5f;     // Maximum delay for clicking late
+                    float holding_max_duration = 0.7f; // Maximum duration for holding the key
 
+                    // Randomly choose between clicking early, clicking late, holding the key, or instant click
                     float random_action = rand() / (float)RAND_MAX;
-                    if (random_action < 0.33f)
+                    if (random_action < 0.25f)
                     {
                         float random_early_delay = rand_range_f(0.0f, early_max_delay);
                         od_check_ms -= random_early_delay;
                     }
-                    else if (random_action < 0.66f)
+                    else if (random_action < 0.5f)
                     {
                         float random_late_delay = rand_range_f(0.0f, late_max_delay);
                         od_check_ms += random_late_delay;
                     }
-                    else
+                    else if (random_action < 0.75f)
                     {
                         float holding_duration = rand_range_f(0.0f, holding_max_duration);
                         keyup_delay += holding_duration;
                     }
-                }
+                    // else, instant click
 
-                if (cfg_relax_style == 'a')
-                    current_click = current_click == left_click[0] ? right_click[0] : left_click[0];
+                    if (cfg_relax_style == 'a')
+                        current_click = current_click == left_click[0] ? right_click[0] : left_click[0];
 
-                send_keyboard_input(current_click, 0);
-                FR_INFO_FMT("Relax hit %d!, %d %d", current_beatmap.hit_object_idx, circle.start_time, circle.end_time);
-                keyup_delay = circle.end_time ? circle.end_time - circle.start_time : 0.5;
+                    send_keyboard_input(current_click, 0);
+                    FR_INFO_FMT("Relax hit %d!, %d %d", current_beatmap.hit_object_idx, circle.start_time, circle.end_time);
+                    keyup_delay = circle.end_time ? circle.end_time - circle.start_time : 0.5;
 
-                if (cfg_timewarp_enabled)
-                {
-                    double timewarp_playback_rate_div_100 = cfg_timewarp_playback_rate / 100.0;
-                    keyup_delay /= timewarp_playback_rate_div_100;
+                    if (cfg_timewarp_enabled)
+                    {
+                        double timewarp_playback_rate_div_100 = cfg_timewarp_playback_rate / 100.0;
+                        keyup_delay /= timewarp_playback_rate_div_100;
+                    }
+                    else if (circle.type == HitObjectType::Slider || circle.type == HitObjectType::Spinner)
+                    {
+                        if (current_beatmap.mods & Mods::DoubleTime)
+                            keyup_delay /= 1.5;
+                        else if (current_beatmap.mods & Mods::HalfTime)
+                            keyup_delay /= 0.75;
+                    }
+                    keydown_time = ImGui::GetTime();
+                    circle.clicked = true;
+                    od_check_ms = .0f;
                 }
-                else if (circle.type == HitObjectType::Slider || circle.type == HitObjectType::Spinner)
-                {
-                    if (current_beatmap.mods & Mods::DoubleTime)
-                        keyup_delay /= 1.5;
-                    else if (current_beatmap.mods & Mods::HalfTime)
-                        keyup_delay /= 0.75;
-                }
-                keydown_time = ImGui::GetTime();
-                circle.clicked = true;
-                od_check_ms = .0f;
             }
         }
     }
