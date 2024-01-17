@@ -87,7 +87,7 @@ void update_relax(Circle &circle, const int32_t audio_time)
         {
             if (!circle.clicked)
             {
-                float alternating_chance = 0.4f;
+                float alternating_chance = 0.2f;
                 if (rand() / (float)RAND_MAX < alternating_chance)
                 {
                     current_click = rand() / (float)RAND_MAX < 0.5 ? left_click[0] : right_click[0];
@@ -98,9 +98,11 @@ void update_relax(Circle &circle, const int32_t audio_time)
                         current_click = current_click == left_click[0] ? right_click[0] : left_click[0];
                 }
 
+                float reaction_time_variation = rand_range_f(0.05f, 0.15f);
                 send_keyboard_input(current_click, 0);
                 FR_INFO_FMT("Relax hit %d!, %d %d", current_beatmap.hit_object_idx, circle.start_time, circle.end_time);
-                keyup_delay = circle.end_time ? circle.end_time - circle.start_time : 0.5;
+
+                keyup_delay = circle.end_time ? circle.end_time - circle.start_time + reaction_time_variation : 0.5;
 
                 if (cfg_timewarp_enabled)
                 {
