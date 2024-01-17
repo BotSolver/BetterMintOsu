@@ -91,27 +91,28 @@ void update_relax(Circle &circle, const int32_t audio_time)
             if (!circle.clicked)
             {
                 // Introduce more unstable alternating clicks
-                float alternating_chance = 0.3f; // 30% chance of alternating
+                float alternating_chance = 0.1f; // 10% chance of alternating
                 if (rand() / (float)RAND_MAX < alternating_chance)
                 {
-                    current_click = rand() / (float)RAND_MAX < 0.5 ? left_click[0] : right_click[0];
+                    // Simulate more unstable timing for alternating clicks
+                    float more_unstable_variation = rand_range_f(0.1f, 0.3f);
+                    current_click = current_click == left_click[0] ? right_click[0] : left_click[0];
+                    keydown_time = ImGui::GetTime() - more_unstable_variation;
                 }
                 else
                 {
-                    if (cfg_relax_style == 'a')
+                    // Simulate more inconsistent unstable rate
+                    float inconsistent_unstable_chance = 0.5f; // 50% chance of being more inconsistent
+                    if (rand() / (float)RAND_MAX < inconsistent_unstable_chance)
                     {
-                        float more_unstable_chance = 0.4f; // 40% chance of being more unstable
-                        if (rand() / (float)RAND_MAX < more_unstable_chance)
-                        {
-                            // Simulate more unstable timing for alternating clicks
-                            float more_unstable_variation = rand_range_f(0.1f, 0.3f);
-                            current_click = current_click == left_click[0] ? right_click[0] : left_click[0];
-                            keydown_time = ImGui::GetTime() - more_unstable_variation;
-                        }
-                        else
-                        {
-                            current_click = current_click == left_click[0] ? right_click[0] : left_click[0];
-                        }
+                        // Simulate more unstable timing for the same key
+                        float more_unstable_variation = rand_range_f(0.1f, 0.2f);
+                        keydown_time = ImGui::GetTime() - more_unstable_variation;
+                    }
+                    else
+                    {
+                        current_click = current_click == left_click[0] ? right_click[0] : left_click[0];
+                        keydown_time = ImGui::GetTime();
                     }
                 }
 
@@ -139,7 +140,6 @@ void update_relax(Circle &circle, const int32_t audio_time)
                     else if (current_beatmap.mods & Mods::HalfTime)
                         keyup_delay /= 0.75;
                 }
-                keydown_time = ImGui::GetTime();
                 circle.clicked = true;
                 od_check_ms = .0f;
             }
