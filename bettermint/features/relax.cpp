@@ -98,26 +98,31 @@ void update_relax(Circle &circle, const int32_t audio_time)
         {
             if (!circle.clicked)
             {
-                float holding_max_duration = 0.2f; // Maximum duration for holding the key
+                float holding_max_duration = 0.2f;
 
-                // Randomly choose between holding the key or instant click
-                float random_action = rand() / (float)RAND_MAX;
-                if (random_action < 0.5f)
+                if (circle.type == HitObjectType::Slider || circle.type == HitObjectType::Spinner)
                 {
-                    float holding_duration = rand_range_f(0.0f, holding_max_duration);
                     keydown_time = ImGui::GetTime();
                     send_keyboard_input(current_click, 0);
                     FR_INFO_FMT("Relax hit %d!, %d %d", current_beatmap.hit_object_idx, circle.start_time, circle.end_time);
                 }
-                // else, instant click
+                else
+                {
+                    float random_action = rand() / (float)RAND_MAX;
+                    if (random_action < 0.5f)
+                    {
+                        float holding_duration = rand_range_f(0.0f, holding_max_duration);
+                        keydown_time = ImGui::GetTime();
+                        send_keyboard_input(current_click, 0);
+                        FR_INFO_FMT("Relax hit %d!, %d %d", current_beatmap.hit_object_idx, circle.start_time, circle.end_time);
+                    }
+                }
 
                 if (cfg_relax_style == 'a')
                 {
-                    // Randomly choose between the two keys
                     current_click = rand() / (float)RAND_MAX < 0.5 ? left_click[0] : right_click[0];
                 }
 
-                keydown_time = ImGui::GetTime();
                 circle.clicked = true;
                 od_check_ms = .0f;
             }
@@ -125,8 +130,7 @@ void update_relax(Circle &circle, const int32_t audio_time)
     }
     if (cfg_relax_lock && keydown_time)
     {
-        // Check if the holding duration has passed
-        if ((ImGui::GetTime() - keydown_time) * 1000.0 > 0.2)
+        if ((ImGui::GetTime() - keydown_time) * 1000.0 > holding_max_duration && circle.type != HitObjectType::Slider && circle.type != HitObjectType::Spinner)
         {
             keydown_time = 0.0;
             send_keyboard_input(current_click, KEYEVENTF_KEYUP);
