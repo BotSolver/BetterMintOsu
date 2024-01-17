@@ -102,23 +102,23 @@ void update_relax(Circle &circle, const int32_t audio_time)
                 float delay_chance = 0.1f; // Adjust the chance based on your preference
                 if (rand() / (float)RAND_MAX < delay_chance)
                 {
-                    float early_max_delay = 0.6f;    // Maximum delay for clicking early
-                    float late_max_delay = 0.5f;     // Maximum delay for clicking late
+                    float early_max_delay = 0.25f;   // Maximum delay for clicking early
+                    float late_max_delay = 0.25f;    // Maximum delay for clicking late
                     float holding_max_duration = 0.2f; // Maximum duration for holding the key
 
                     // Randomly choose between clicking early, clicking late, holding the key, or instant click
                     float random_action = rand() / (float)RAND_MAX;
-                    if (random_action < 0.25f)
+                    if (random_action < 0.2f)
                     {
                         float random_early_delay = rand_range_f(0.0f, early_max_delay);
                         od_check_ms -= random_early_delay;
                     }
-                    else if (random_action < 0.5f)
+                    else if (random_action < 0.4f)
                     {
                         float random_late_delay = rand_range_f(0.0f, late_max_delay);
                         od_check_ms += random_late_delay;
                     }
-                    else if (random_action < 0.75f)
+                    else if (random_action < 0.6f)
                     {
                         float holding_duration = rand_range_f(0.0f, holding_max_duration);
                         keyup_delay += holding_duration;
@@ -126,7 +126,10 @@ void update_relax(Circle &circle, const int32_t audio_time)
                     // else, instant click
 
                     if (cfg_relax_style == 'a')
-                        current_click = current_click == left_click[0] ? right_click[0] : left_click[0];
+                    {
+                        // Randomly choose between the two keys
+                        current_click = rand() / (float)RAND_MAX < 0.5 ? left_click[0] : right_click[0];
+                    }
 
                     send_keyboard_input(current_click, 0);
                     FR_INFO_FMT("Relax hit %d!, %d %d", current_beatmap.hit_object_idx, circle.start_time, circle.end_time);
