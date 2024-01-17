@@ -74,7 +74,6 @@ Vector2<float> mouse_position()
 void update_relax(Circle &circle, const int32_t audio_time)
 {
     static double keydown_time = 0.0;
-    static double keyup_delay = 0.0;
 
     if (cfg_relax_lock)
     {
@@ -99,65 +98,39 @@ void update_relax(Circle &circle, const int32_t audio_time)
         {
             if (!circle.clicked)
             {
-                float delay_chance = 0.1f; // Adjust the chance based on your preference
-                if (rand() / (float)RAND_MAX < delay_chance)
+                float holding_max_duration = 0.2f; // Maximum duration for holding the key
+
+                // Randomly choose between holding the key or instant click
+                float random_action = rand() / (float)RAND_MAX;
+                if (random_action < 0.5f)
                 {
-                    float early_max_delay = 0.25f;   // Maximum delay for clicking early
-                    float late_max_delay = 0.25f;    // Maximum delay for clicking late
-                    float holding_max_duration = 0.2f; // Maximum duration for holding the key
-
-                    // Randomly choose between clicking early, clicking late, holding the key, or instant click
-                    float random_action = rand() / (float)RAND_MAX;
-                    if (random_action < 0.2f)
-                    {
-                        float random_early_delay = rand_range_f(0.0f, early_max_delay);
-                        od_check_ms -= random_early_delay;
-                    }
-                    else if (random_action < 0.4f)
-                    {
-                        float random_late_delay = rand_range_f(0.0f, late_max_delay);
-                        od_check_ms += random_late_delay;
-                    }
-                    else if (random_action < 0.6f)
-                    {
-                        float holding_duration = rand_range_f(0.0f, holding_max_duration);
-                        keyup_delay += holding_duration;
-                    }
-                    // else, instant click
-
-                    if (cfg_relax_style == 'a')
-                    {
-                        // Randomly choose between the two keys
-                        current_click = rand() / (float)RAND_MAX < 0.5 ? left_click[0] : right_click[0];
-                    }
-
+                    float holding_duration = rand_range_f(0.0f, holding_max_duration);
+                    keydown_time = ImGui::GetTime();
                     send_keyboard_input(current_click, 0);
                     FR_INFO_FMT("Relax hit %d!, %d %d", current_beatmap.hit_object_idx, circle.start_time, circle.end_time);
-                    keyup_delay = circle.end_time ? circle.end_time - circle.start_time : 0.5;
-
-                    if (cfg_timewarp_enabled)
-                    {
-                        double timewarp_playback_rate_div_100 = cfg_timewarp_playback_rate / 100.0;
-                        keyup_delay /= timewarp_playback_rate_div_100;
-                    }
-                    else if (circle.type == HitObjectType::Slider || circle.type == HitObjectType::Spinner)
-                    {
-                        if (current_beatmap.mods & Mods::DoubleTime)
-                            keyup_delay /= 1.5;
-                        else if (current_beatmap.mods & Mods::HalfTime)
-                            keyup_delay /= 0.75;
-                    }
-                    keydown_time = ImGui::GetTime();
-                    circle.clicked = true;
-                    od_check_ms = .0f;
                 }
+                // else, instant click
+
+                if (cfg_relax_style == 'a')
+                {
+                    // Randomly choose between the two keys
+                    current_click = rand() / (float)RAND_MAX < 0.5 ? left_click[0] : right_click[0];
+                }
+
+                keydown_time = ImGui::GetTime();
+                circle.clicked = true;
+                od_check_ms = .0f;
             }
         }
     }
-    if (cfg_relax_lock && keydown_time && ((ImGui::GetTime() - keydown_time) * 1000.0 > keyup_delay))
+    if (cfg_relax_lock && keydown_time)
     {
-        keydown_time = 0.0;
-        send_keyboard_input(current_click, KEYEVENTF_KEYUP);
+        // Check if the holding duration has passed
+        if ((ImGui::GetTime() - keydown_time) * 1000.0 > 0.2)
+        {
+            keydown_time = 0.0;
+            send_keyboard_input(current_click, KEYEVENTF_KEYUP);
+        }
     }
 }
 
