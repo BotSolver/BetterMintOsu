@@ -104,7 +104,7 @@ void update_relax(Circle &circle, const int32_t audio_time)
                 {
                     float early_max_delay = 0.6f;    // Maximum delay for clicking early
                     float late_max_delay = 0.5f;     // Maximum delay for clicking late
-                    float holding_max_duration = 0.7f; // Maximum duration for holding the key
+                    float holding_max_duration = 0.2f; // Maximum duration for holding the key
 
                     // Randomly choose between clicking early, clicking late, holding the key, or instant click
                     float random_action = rand() / (float)RAND_MAX;
