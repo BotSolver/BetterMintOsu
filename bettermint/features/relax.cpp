@@ -103,13 +103,13 @@ void update_relax(Circle &circle, const int32_t audio_time)
                     }
                 }
 
-                float reaction_time_variation = rand_range_f(0.15f, 0.25f); // Increased reaction time variation
+                float reaction_time_variation = rand_range_f(0.2f, 0.4f); // Increased reaction time variation further
                 send_keyboard_input(current_click, 0);
                 FR_INFO_FMT("Relax hit %d!, %d %d", current_beatmap.hit_object_idx, circle.start_time, circle.end_time);
 
                 keyup_delay = circle.end_time ? circle.end_time - circle.start_time + reaction_time_variation : 0.5;
 
-                float holding_time_variation = rand_range_f(0.1f, 0.2f); // Adjusted holding time variation
+                float holding_time_variation = rand_range_f(0.15f, 0.25f); // Adjusted holding time variation further
                 keyup_delay += holding_time_variation;
 
                 if (cfg_timewarp_enabled)
