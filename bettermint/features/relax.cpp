@@ -20,15 +20,6 @@ static char current_click = cfg_relax_style == 'a' ? right_click[0] : left_click
 
 void calc_od_timing()
 {
-    static const auto rand_range_f = [](float f_min, float f_max) -> float
-    {
-        float scale = rand() / (float)RAND_MAX;
-        return f_min + scale * (f_max - f_min);
-    };
-    static const auto rand_range_i = [](int i_min, int i_max) -> int
-    {
-        return rand() % (i_max + 1 - i_min) + i_min;
-    };
     if (cfg_relax_checks_od && (od_check_ms == .0f))
     {
         od_check_ms = rand_range_f(od_window_left_offset, od_window_right_offset);
@@ -90,22 +81,18 @@ void update_relax(Circle &circle, const int32_t audio_time)
         {
             if (!circle.clicked)
             {
-                // Introduce more unstable alternating clicks
-                float alternating_chance = 0.1f; // 10% chance of alternating
+                float alternating_chance = 0.3f;
                 if (rand() / (float)RAND_MAX < alternating_chance)
                 {
-                    // Simulate more unstable timing for alternating clicks
                     float more_unstable_variation = rand_range_f(0.1f, 0.3f);
                     current_click = current_click == left_click[0] ? right_click[0] : left_click[0];
                     keydown_time = ImGui::GetTime() - more_unstable_variation;
                 }
                 else
                 {
-                    // Simulate more inconsistent unstable rate
-                    float inconsistent_unstable_chance = 0.5f; // 50% chance of being more inconsistent
+                    float inconsistent_unstable_chance = 0.2f;
                     if (rand() / (float)RAND_MAX < inconsistent_unstable_chance)
                     {
-                        // Simulate more unstable timing for the same key
                         float more_unstable_variation = rand_range_f(0.1f, 0.2f);
                         keydown_time = ImGui::GetTime() - more_unstable_variation;
                     }
@@ -116,15 +103,12 @@ void update_relax(Circle &circle, const int32_t audio_time)
                     }
                 }
 
-                // Simulate more unstable reaction time
                 float reaction_time_variation = rand_range_f(0.1f, 0.2f);
                 send_keyboard_input(current_click, 0);
                 FR_INFO_FMT("Relax hit %d!, %d %d", current_beatmap.hit_object_idx, circle.start_time, circle.end_time);
 
-                // Adjust keyup delay based on more unstable reaction time for a more human-like scoring
                 keyup_delay = circle.end_time ? circle.end_time - circle.start_time + reaction_time_variation : 0.5;
 
-                // Simulate more human-like holding time with variations
                 float holding_time_variation = rand_range_f(0.05f, 0.15f);
                 keyup_delay += holding_time_variation;
 
