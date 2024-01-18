@@ -1,6 +1,9 @@
 #include "features/relax.h"
 #include "window.h"
 
+static const auto rand_range_f = [](float f_min, float f_max) -> float;
+static const auto rand_range_i = [](int i_min, int i_max) -> int;
+
 float od_window = 5.f;
 float od_window_left_offset = .0f;
 float od_window_right_offset = .0f;
