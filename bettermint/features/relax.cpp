@@ -15,19 +15,17 @@ bool debug_relax = false;
 
 static char current_click = cfg_relax_style == 'a' ? right_click[0] : left_click[0];
 
-float rand_range_f(float f_min, float f_max)
-{
-    float scale = rand() / (float)RAND_MAX;
-    return f_min + scale * (f_max - f_min);
-}
-
-int rand_range_i(int i_min, int i_max)
-{
-    return rand() % (i_max + 1 - i_min) + i_min;
-}
-
 void calc_od_timing()
 {
+    static const auto rand_range_f = [](float f_min, float f_max) -> float
+    {
+        float scale = rand() / (float)RAND_MAX;
+        return f_min + scale * (f_max - f_min);
+    };
+    static const auto rand_range_i = [](int i_min, int i_max) -> int
+    {
+        return rand() % (i_max + 1 - i_min) + i_min;
+    };
     if (cfg_relax_checks_od && (od_check_ms == .0f))
     {
         od_check_ms = rand_range_f(od_window_left_offset, od_window_right_offset);
@@ -97,10 +95,6 @@ void update_relax(Circle &circle, const int32_t audio_time)
 
                 send_keyboard_input(current_click, 0);
                 FR_INFO_FMT("Relax hit %d!, %d %d", current_beatmap.hit_object_idx, circle.start_time, circle.end_time);
-
-                // Introduce variability in keydown_time
-                keydown_time = ImGui::GetTime() + rand_range_f(-10.0, 10.0);
-
                 keyup_delay = circle.end_time ? circle.end_time - circle.start_time : 0.5;
 
                 if (cfg_timewarp_enabled)
@@ -115,7 +109,7 @@ void update_relax(Circle &circle, const int32_t audio_time)
                     else if (current_beatmap.mods & Mods::HalfTime)
                         keyup_delay /= 0.75;
                 }
-
+                keydown_time = ImGui::GetTime();
                 circle.clicked = true;
                 od_check_ms = .0f;
             }
