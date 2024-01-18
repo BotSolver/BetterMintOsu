@@ -1,5 +1,11 @@
 #include "features/aimbot.h"
 #include <cmath>
+#include <cstdlib>
+
+static float rand_range_f(float f_min, float f_max) {
+    float scale = rand() / (float)RAND_MAX;
+    return f_min + scale * (f_max - f_min);
+}
 
 static inline float easeInOutQuad(float t) {
     return t < 0.5 ? 2.0 * t * t : 1.0 - pow(-2.0 * t + 2.0, 2.0) / 2.0;
@@ -8,6 +14,17 @@ static inline float easeInOutQuad(float t) {
 static inline float lerpWithEase(float a, float b, float t) {
     t = easeInOutQuad(t);
     return a + t * (b - a);
+}
+
+static inline Vector2<float> mouse_position() {
+    Vector2<float> mouse_pos(.0f, .0f);
+    uintptr_t osu_manager = *(uintptr_t*)(osu_manager_ptr);
+    if (!osu_manager) return mouse_pos;
+    uintptr_t osu_ruleset_ptr = *(uintptr_t*)(osu_manager + OSU_MANAGER_RULESET_PTR_OFFSET);
+    if (!osu_ruleset_ptr) return mouse_pos;
+    mouse_pos.x = *(float*)(osu_ruleset_ptr + OSU_RULESET_MOUSE_X_OFFSET);
+    mouse_pos.y = *(float*)(osu_ruleset_ptr + OSU_RULESET_MOUSE_Y_OFFSET);
+    return mouse_pos;
 }
 
 static inline void move_mouse_to_target(const Vector2<float> &target, const Vector2<float> &cursor_pos, float t) {
@@ -26,7 +43,7 @@ void update_aimbot(Circle &circle, const int32_t audio_time) {
         return;
 
     float t = cfg_fraction_modifier * ImGui::GetIO().DeltaTime;
-    Vector2 cursor_pos = mouse_position();
+    Vector2<float> cursor_pos = mouse_position();
 
     if (circle.type == HitObjectType::Circle) {
         move_mouse_to_target(circle.position, cursor_pos, t);
@@ -42,7 +59,7 @@ void update_aimbot(Circle &circle, const int32_t audio_time) {
         float slider_ball_x = *(float *)(animation_ptr + OSU_ANIMATION_SLIDER_BALL_X_OFFSET);
         float slider_ball_y = *(float *)(animation_ptr + OSU_ANIMATION_SLIDER_BALL_Y_OFFSET);
         Vector2 slider_ball(slider_ball_x, slider_ball_y);
-        
+
         float slider_variation = 5.0f;
         slider_ball.x += rand_range_f(-slider_variation, slider_variation);
         slider_ball.y += rand_range_f(-slider_variation, slider_variation);
