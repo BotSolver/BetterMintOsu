@@ -1,3 +1,5 @@
+# THIS IS A COMMUNITY PROJECT, ALL UPDATES FROM YOU GUYS AND US, THIS IS OURS SO HELP BUILD UP AND SUPPORT!
+
 # BetterOsu
 
 BetterOsu - internal osu! mod, realtime difficulty changer for any beatmap, works online.  
