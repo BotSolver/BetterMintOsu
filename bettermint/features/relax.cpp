@@ -90,10 +90,10 @@ void update_relax(Circle &circle, const int32_t audio_time)
                 }
                 else
                 {
-                    float inconsistent_unstable_chance = 0.2f;
+                    float inconsistent_unstable_chance = 0.3f; // Increased chance of inconsistency
                     if (rand() / (float)RAND_MAX < inconsistent_unstable_chance)
                     {
-                        float more_unstable_variation = rand_range_f(0.1f, 0.2f);
+                        float more_unstable_variation = rand_range_f(0.1f, 0.25f); // Adjusted inconsistency variation
                         keydown_time = ImGui::GetTime() - more_unstable_variation;
                     }
                     else
@@ -103,13 +103,13 @@ void update_relax(Circle &circle, const int32_t audio_time)
                     }
                 }
 
-                float reaction_time_variation = rand_range_f(0.2f, 0.4f); // Increased reaction time variation further
+                float reaction_time_variation = rand_range_f(0.15f, 0.35f); // Further adjusted reaction time variation
                 send_keyboard_input(current_click, 0);
                 FR_INFO_FMT("Relax hit %d!, %d %d", current_beatmap.hit_object_idx, circle.start_time, circle.end_time);
 
                 keyup_delay = circle.end_time ? circle.end_time - circle.start_time + reaction_time_variation : 0.5;
 
-                float holding_time_variation = rand_range_f(0.15f, 0.25f); // Adjusted holding time variation further
+                float holding_time_variation = rand_range_f(0.2f, 0.35f); // Further adjusted holding time variation
                 keyup_delay += holding_time_variation;
 
                 if (cfg_timewarp_enabled)
