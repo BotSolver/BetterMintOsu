@@ -23,18 +23,23 @@ static inline float lerpWithEase(float a, float b, float t) {
 
 static constexpr float DEAD_ZONE_THRESHOLD = 1.0f;
 
+template <typename T>
+static inline T distance(const Vector2<T> &v1, const Vector2<T> &v2) {
+    return std::sqrt(std::pow(v1.x - v2.x, 2) + std::pow(v1.y - v2.y, 2));
+}
+
 static inline Vector2<float> stableMousePosition() {
     Vector2<float> currentMousePos(.0f, .0f);
-    uintptr_t osu_manager = *(uintptr_t*)(osu_manager_ptr);
+    uintptr_t osu_manager = *(uintptr_t *)(osu_manager_ptr);
     if (!osu_manager) return currentMousePos;
-    uintptr_t osu_ruleset_ptr = *(uintptr_t*)(osu_manager + OSU_MANAGER_RULESET_PTR_OFFSET);
+    uintptr_t osu_ruleset_ptr = *(uintptr_t *)(osu_manager + OSU_MANAGER_RULESET_PTR_OFFSET);
     if (!osu_ruleset_ptr) return currentMousePos;
-    currentMousePos.x = *(float*)(osu_ruleset_ptr + OSU_RULESET_MOUSE_X_OFFSET);
-    currentMousePos.y = *(float*)(osu_ruleset_ptr + OSU_RULESET_MOUSE_Y_OFFSET);
+    currentMousePos.x = *(float *)(osu_ruleset_ptr + OSU_RULESET_MOUSE_X_OFFSET);
+    currentMousePos.y = *(float *)(osu_ruleset_ptr + OSU_RULESET_MOUSE_Y_OFFSET);
 
     static Vector2<float> lastMousePos = currentMousePos;
 
-    if (Vector2<float>::Distance(currentMousePos, lastMousePos) < DEAD_ZONE_THRESHOLD) {
+    if (distance(currentMousePos, lastMousePos) < DEAD_ZONE_THRESHOLD) {
         return lastMousePos;
     }
 
@@ -81,7 +86,7 @@ void update_aimbot(Circle &circle, const int32_t audio_time) {
 
         move_mouse_to_target(slider_ball, cursor_pos, t);
     } else if (circle.type == HitObjectType::Spinner && audio_time >= circle.start_time) {
-        auto& center = circle.position;
+        auto &center = circle.position;
         constexpr float radius = 60.0f;
         constexpr float PI = 3.14159f;
         static float angle = .0f;
