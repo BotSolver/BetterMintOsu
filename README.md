@@ -96,3 +96,6 @@ It doesn't function as an external, [features](#features) will not work.
 | run         | Run standalone after build    |
 | rebuild     | Update headers / Rebuild all  |
 | debug       | Symbols, Disable Optimizations|
+
+
+Creds to https://github.com/Ciremun/freedom
