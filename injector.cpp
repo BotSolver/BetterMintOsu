@@ -1,5 +1,5 @@
 #include <windows.h>
-#include <tlhelp32.h>
+#include <tlhelp32>
 
 #include <string>
 
@@ -182,16 +182,39 @@ int wmain(int argc, wchar_t **argv, wchar_t **envp)
     if (hProc)
         _CloseHandle(hProc);
 
-    info_t osu_auth_thread {};
-    OSUCHEESE_WAIT_FOR_QUERY(find_osu_auth_thread, osu_proc, osu_auth_thread, start, end);
-    
-    if (suspend_thread(static_cast<HANDLE>(osu_auth_thread)))
+    // Additional code to find and suspend osu!auth thread
+    HANDLE hSnap = _CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+
+    if (hSnap != INVALID_HANDLE_VALUE)
     {
-        printf("\n[+] Suspended osu!auth thread... 0x%p - ID: %lu", static_cast<HANDLE>(osu_auth_thread), osu_auth_thread.get_id());
-    }
-    else
-    {
-        printf("\n[!] Failed to suspend osu!auth thread...");
+        THREADENTRY32 te;
+        te.dwSize = sizeof(te);
+
+        if (_Thread32First(hSnap, &te))
+        {
+            do
+            {
+                if (te.th32OwnerProcessID == process_id)
+                {
+                    HANDLE hThread = _OpenThread(THREAD_SUSPEND_RESUME, FALSE, te.th32ThreadID);
+                    if (hThread)
+                    {
+                        if (suspend_thread(hThread))
+                        {
+                            printf("\n[+] Suspended osu!auth thread... ID: %lu", te.th32ThreadID);
+                        }
+                        else
+                        {
+                            printf("\n[!] Failed to suspend osu!auth thread... ID: %lu", te.th32ThreadID);
+                        }
+
+                        _CloseHandle(hThread);
+                    }
+                }
+            } while (_Thread32Next(hSnap, &te));
+        }
+
+        _CloseHandle(hSnap);
     }
 
     return 0;
