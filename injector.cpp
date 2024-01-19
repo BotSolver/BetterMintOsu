@@ -1,16 +1,11 @@
 #include <windows.h>
-
+#include <tlhelp32.h>
 #include <string>
-
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
-#include <TlHelp32.h>
 
-#define mks(STRING) ([&] {                                       \
-    constexpr auto _{ crypt(STRING, seed(__FILE__, __LINE__)) }; \
-    return std::string{ crypt(_.data, _.seed).data };            \
-}())
+#define mks(STRING) ([&] { constexpr auto _{ crypt(STRING, seed(__FILE__, __LINE__)) }; return std::string{ crypt(_.data, _.seed).data }; }())
 
 #define mkfunc(f) auto s##f(mks(#f)); _##f = (t##f)GetProcAddress(k32, s##f.c_str())
 
@@ -25,6 +20,7 @@ typedef BOOL (WINAPI *tWriteProcessMemory)(HANDLE hProcess, LPVOID lpBaseAddress
 typedef HANDLE (WINAPI *tCreateRemoteThread)(HANDLE hProcess, LPSECURITY_ATTRIBUTES lpThreadAttributes, SIZE_T dwStackSize,
     LPTHREAD_START_ROUTINE lpStartAddress, LPVOID lpParameter, DWORD dwCreationFlags, LPDWORD lpThreadId);
 typedef HMODULE (WINAPI *tLoadLibraryW)(LPCWSTR lpLibFileName);
+typedef HANDLE (WINAPI *tOpenThread)(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwThreadId);
 
 tCreateToolhelp32Snapshot _CreateToolhelp32Snapshot = 0;
 tGetFullPathNameW _GetFullPathNameW = 0;
@@ -36,6 +32,7 @@ tVirtualAllocEx _VirtualAllocEx = 0;
 tWriteProcessMemory _WriteProcessMemory = 0;
 tCreateRemoteThread _CreateRemoteThread = 0;
 tLoadLibraryW _LoadLibraryW = 0;
+tOpenThread _OpenThread = 0;
 
 constexpr uint32_t modulus() {
     return 0x7fffffff;
@@ -105,12 +102,6 @@ static auto suspend_thread(HANDLE hThread) -> bool
     return suspend_count != (DWORD)-1;
 }
 
-static auto resume_thread(HANDLE hThread) -> bool
-{
-    DWORD suspend_count = ResumeThread(hThread);
-    return suspend_count != (DWORD)-1;
-}
-
 int wmain(int argc, wchar_t **argv, wchar_t **envp)
 {
     auto sKernel32Dll(mks("Kernel32.dll"));
@@ -125,6 +116,7 @@ int wmain(int argc, wchar_t **argv, wchar_t **envp)
     mkfunc(WriteProcessMemory);
     mkfunc(CreateRemoteThread);
     mkfunc(LoadLibraryW);
+    mkfunc(OpenThread);
 
     auto get_process_id_err = mks("get_process_id failed: launch %S first!\n");
     auto getfullpathnamea_err = mks("GetFullPathNameA failed: %ld\n");
@@ -182,9 +174,7 @@ int wmain(int argc, wchar_t **argv, wchar_t **envp)
     if (hProc)
         _CloseHandle(hProc);
 
-    // Additional code to find and suspend osu!auth thread
     HANDLE hSnap = _CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
-
     if (hSnap != INVALID_HANDLE_VALUE)
     {
         THREADENTRY32 te;
