@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <TlHelp32.h>
 
 #define mks(STRING) ([&] {                                       \
     constexpr auto _{ crypt(STRING, seed(__FILE__, __LINE__)) }; \
