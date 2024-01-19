@@ -33,6 +33,8 @@ tWriteProcessMemory _WriteProcessMemory = 0;
 tCreateRemoteThread _CreateRemoteThread = 0;
 tLoadLibraryW _LoadLibraryW = 0;
 tOpenThread _OpenThread = 0;
+tThread32First _Thread32First = 0;
+tThread32Next _Thread32Next = 0;
 
 constexpr uint32_t modulus() {
     return 0x7fffffff;
@@ -117,6 +119,8 @@ int wmain(int argc, wchar_t **argv, wchar_t **envp)
     mkfunc(CreateRemoteThread);
     mkfunc(LoadLibraryW);
     mkfunc(OpenThread);
+    mkfunc(Thread32First);
+    mkfunc(Thread32Next);
 
     auto get_process_id_err = mks("get_process_id failed: launch %S first!\n");
     auto getfullpathnamea_err = mks("GetFullPathNameA failed: %ld\n");
