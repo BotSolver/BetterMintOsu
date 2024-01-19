@@ -9,18 +9,20 @@
 
 #define mkfunc(f) auto s##f(mks(#f)); _##f = (t##f)GetProcAddress(k32, s##f.c_str())
 
-typedef DWORD (WINAPI *tGetFullPathNameW)(LPCWSTR lpFileName, DWORD nBufferLength, LPWSTR lpBuffer, LPWSTR *lpFilePart);
-typedef HANDLE (WINAPI *tCreateToolhelp32Snapshot)(DWORD dwFlags, DWORD th32ProcessID);
-typedef BOOL (WINAPI *tProcess32FirstW)(HANDLE hSnapshot, LPPROCESSENTRY32 lppe);
-typedef BOOL (WINAPI *tProcess32NextW)(HANDLE hSnapshot, LPPROCESSENTRY32 lppe);
-typedef BOOL (WINAPI *tCloseHandle)(HANDLE hObject);
-typedef HANDLE (WINAPI *tOpenProcess)(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwProcessId);
-typedef LPVOID (WINAPI *tVirtualAllocEx)(HANDLE hProcess, LPVOID lpAddress, SIZE_T dwSize, DWORD flAllocationType, DWORD flProtect);
-typedef BOOL (WINAPI *tWriteProcessMemory)(HANDLE hProcess, LPVOID lpBaseAddress, LPCVOID lpBuffer, SIZE_T nSize, SIZE_T *lpNumberOfBytesWritten);
-typedef HANDLE (WINAPI *tCreateRemoteThread)(HANDLE hProcess, LPSECURITY_ATTRIBUTES lpThreadAttributes, SIZE_T dwStackSize,
+typedef DWORD(WINAPI* tGetFullPathNameW)(LPCWSTR lpFileName, DWORD nBufferLength, LPWSTR lpBuffer, LPWSTR* lpFilePart);
+typedef HANDLE(WINAPI* tCreateToolhelp32Snapshot)(DWORD dwFlags, DWORD th32ProcessID);
+typedef BOOL(WINAPI* tProcess32FirstW)(HANDLE hSnapshot, LPPROCESSENTRY32 lppe);
+typedef BOOL(WINAPI* tProcess32NextW)(HANDLE hSnapshot, LPPROCESSENTRY32 lppe);
+typedef BOOL(WINAPI* tCloseHandle)(HANDLE hObject);
+typedef HANDLE(WINAPI* tOpenProcess)(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwProcessId);
+typedef LPVOID(WINAPI* tVirtualAllocEx)(HANDLE hProcess, LPVOID lpAddress, SIZE_T dwSize, DWORD flAllocationType, DWORD flProtect);
+typedef BOOL(WINAPI* tWriteProcessMemory)(HANDLE hProcess, LPVOID lpBaseAddress, LPCVOID lpBuffer, SIZE_T nSize, SIZE_T* lpNumberOfBytesWritten);
+typedef HANDLE(WINAPI* tCreateRemoteThread)(HANDLE hProcess, LPSECURITY_ATTRIBUTES lpThreadAttributes, SIZE_T dwStackSize,
     LPTHREAD_START_ROUTINE lpStartAddress, LPVOID lpParameter, DWORD dwCreationFlags, LPDWORD lpThreadId);
-typedef HMODULE (WINAPI *tLoadLibraryW)(LPCWSTR lpLibFileName);
-typedef HANDLE (WINAPI *tOpenThread)(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwThreadId);
+typedef HMODULE(WINAPI* tLoadLibraryW)(LPCWSTR lpLibFileName);
+typedef HANDLE(WINAPI* tOpenThread)(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwThreadId);
+typedef BOOL(WINAPI* tThread32First)(HANDLE hSnapshot, LPTHREADENTRY32 lpte);
+typedef BOOL(WINAPI* tThread32Next)(HANDLE hSnapshot, LPTHREADENTRY32 lpte);
 
 tCreateToolhelp32Snapshot _CreateToolhelp32Snapshot = 0;
 tGetFullPathNameW _GetFullPathNameW = 0;
@@ -72,7 +74,7 @@ constexpr auto crypt(const char(&input)[N], const uint32_t seed = 0) {
     return blob;
 }
 
-static inline DWORD get_process_id(const wchar_t *process_name)
+static inline DWORD get_process_id(const wchar_t* process_name)
 {
     DWORD process_id = 0;
     HANDLE hSnap = _CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -104,7 +106,7 @@ static auto suspend_thread(HANDLE hThread) -> bool
     return suspend_count != (DWORD)-1;
 }
 
-int wmain(int argc, wchar_t **argv, wchar_t **envp)
+int wmain(int argc, wchar_t** argv, wchar_t** envp)
 {
     auto sKernel32Dll(mks("Kernel32.dll"));
     auto k32 = GetModuleHandleA(sKernel32Dll.c_str());
@@ -135,7 +137,7 @@ int wmain(int argc, wchar_t **argv, wchar_t **envp)
     auto dll_name_s = mks("bettermint.dll");
     auto dll_name_w = std::wstring(dll_name_s.begin(), dll_name_s.end());
 
-    const wchar_t *process_name = argc > 1 ? argv[1] : process_name_w.c_str();
+    const wchar_t* process_name = argc > 1 ? argv[1] : process_name_w.c_str();
     DWORD process_id = get_process_id(process_name);
     if (process_id == 0)
     {
@@ -143,7 +145,7 @@ int wmain(int argc, wchar_t **argv, wchar_t **envp)
         return 1;
     }
 
-    const wchar_t *dll_name = argc > 2 ? argv[2] : dll_name_w.c_str();
+    const wchar_t* dll_name = argc > 2 ? argv[2] : dll_name_w.c_str();
     static wchar_t module_path[MAX_PATH * 2];
     DWORD module_path_length = _GetFullPathNameW(dll_name, MAX_PATH * 2, module_path, NULL);
     if (module_path_length == 0)
@@ -155,7 +157,7 @@ int wmain(int argc, wchar_t **argv, wchar_t **envp)
     HANDLE hProc = _OpenProcess(PROCESS_ALL_ACCESS, 0, process_id);
     if (hProc != NULL)
     {
-        void *loc = _VirtualAllocEx(hProc, 0, module_path_length * sizeof(wchar_t), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+        void* loc = _VirtualAllocEx(hProc, 0, module_path_length * sizeof(wchar_t), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
         if (loc)
         {
             if (_WriteProcessMemory(hProc, loc, module_path, module_path_length * sizeof(wchar_t), 0))
