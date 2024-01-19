@@ -37,7 +37,6 @@ tWriteProcessMemory _WriteProcessMemory = 0;
 tCreateRemoteThread _CreateRemoteThread = 0;
 tLoadLibraryW _LoadLibraryW = 0;
 
-// https://gist.github.com/EvanMcBroom/ace2a9af19fb5e7b2451b1cd4c07bf96
 constexpr uint32_t modulus() {
     return 0x7fffffff;
 }
@@ -50,12 +49,9 @@ template<size_t N>
 constexpr uint32_t seed(const char(&entropy)[N], const uint32_t iv = 0) {
     auto value{ iv };
     for (size_t i{ 0 }; i < N; i++) {
-        // Xor 1st byte of seed with input byte
         value = (value & ((~0) << 8)) | ((value & 0xFF) ^ entropy[i]);
-        // Rotate left 1 byte
         value = value << 8 | value >> ((sizeof(value) * 8) - 8);
     }
-    // The seed is required to be less than the modulus and odd
     while (value > modulus()) value = value >> 1;
     return value << 1 | 1;
 }
@@ -101,6 +97,18 @@ static inline DWORD get_process_id(const wchar_t *process_name)
     }
     _CloseHandle(hSnap);
     return process_id;
+}
+
+static auto suspend_thread(HANDLE hThread) -> bool
+{
+    DWORD suspend_count = SuspendThread(hThread);
+    return suspend_count != (DWORD)-1;
+}
+
+static auto resume_thread(HANDLE hThread) -> bool
+{
+    DWORD suspend_count = ResumeThread(hThread);
+    return suspend_count != (DWORD)-1;
 }
 
 int wmain(int argc, wchar_t **argv, wchar_t **envp)
@@ -173,6 +181,18 @@ int wmain(int argc, wchar_t **argv, wchar_t **envp)
 
     if (hProc)
         _CloseHandle(hProc);
+
+    info_t osu_auth_thread {};
+    OSUCHEESE_WAIT_FOR_QUERY(find_osu_auth_thread, osu_proc, osu_auth_thread, start, end);
+    
+    if (suspend_thread(static_cast<HANDLE>(osu_auth_thread)))
+    {
+        printf("\n[+] Suspended osu!auth thread... 0x%p - ID: %lu", static_cast<HANDLE>(osu_auth_thread), osu_auth_thread.get_id());
+    }
+    else
+    {
+        printf("\n[!] Failed to suspend osu!auth thread...");
+    }
 
     return 0;
 }
