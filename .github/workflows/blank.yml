@@ -1,16 +1,19 @@
 name: build-bettermint
 on:
   push:
-    paths:
-    - 'bettermint/**'
-    - 'imgui/**'
-    - 'include/**'
-  workflow_dispatch:
+    branches:
+      - main
     paths:
       - 'bettermint/**'
       - 'imgui/**'
       - 'include/**'
-
+  workflow_dispatch:
+    branches:
+      - main
+    paths:
+      - 'bettermint/**'
+      - 'imgui/**'
+      - 'include/**'
 jobs:
   windows-msvc:
     runs-on: windows-latest
