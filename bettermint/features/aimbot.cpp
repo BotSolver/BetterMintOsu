@@ -27,6 +27,8 @@ static inline float lerpWithEase(float a, float b, float t) {
 }
 
 static constexpr float DEAD_ZONE_THRESHOLD = 1.0f;
+static constexpr float MAX_MOVEMENT_VARIATION = 10.0f;
+static constexpr float MIN_DISTANCE_FOR_MAX_VARIATION = 200.0f;
 
 template <typename T>
 static inline T distance(const Vector2<T> &v1, const Vector2<T> &v2) {
@@ -55,7 +57,9 @@ static inline Vector2<float> stableMousePosition() {
 static inline void move_mouse_to_target(const Vector2<float> &target, const Vector2<float> &cursor_pos, float t) {
     Vector2 target_on_screen = playfield_to_screen(target);
 
-    float movement_variation = 1.5f; // Adjust as needed
+    float distance_to_target = distance(target_on_screen, cursor_pos);
+    float movement_variation = MAX_MOVEMENT_VARIATION * (1.0f - smoothStep(0.0f, MIN_DISTANCE_FOR_MAX_VARIATION, distance_to_target));
+
     target_on_screen.x += rand_range_f(-movement_variation, movement_variation);
     target_on_screen.y += rand_range_f(-movement_variation, movement_variation);
 
