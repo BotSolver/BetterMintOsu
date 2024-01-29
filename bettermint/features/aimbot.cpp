@@ -1,7 +1,7 @@
 #include "features/aimbot.h"
 #include <cmath>
 #include <cstdlib>
-#include "include/parse.h" // Include parse.h to access Circle struct and other definitions
+#include "parse.h" // Include parse.h to access Circle struct and other definitions
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
