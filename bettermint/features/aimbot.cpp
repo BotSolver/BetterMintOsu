@@ -1,6 +1,11 @@
 #include "features/aimbot.h"
 #include <cmath>
 #include <cstdlib>
+#include "include/parse.h" // Include parse.h to access Circle struct and other definitions
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 static float rand_range_f(float f_min, float f_max) {
     float scale = rand() / (float)RAND_MAX;
@@ -48,23 +53,14 @@ static inline Vector2<float> stableMousePosition() {
 }
 
 static inline void move_mouse_to_target(const Vector2<float> &target, const Vector2<float> &cursor_pos, float t) {
-    Vector2<float> direction = target - cursor_pos;
-    float distance = direction.length();
+    Vector2 target_on_screen = playfield_to_screen(target);
 
-    // Apply smoothing
-    constexpr float SMOOTHING_FACTOR = 0.8f;
-    float smoothing = pow(SMOOTHING_FACTOR, t);
+    float movement_variation = 1.5f; // Adjust as needed
+    target_on_screen.x += rand_range_f(-movement_variation, movement_variation);
+    target_on_screen.y += rand_range_f(-movement_variation, movement_variation);
 
-    // Calculate smoothed movement
-    Vector2<float> smoothed_direction = direction * (1.0f - smoothing);
-    Vector2<float> new_cursor_pos = cursor_pos + smoothed_direction;
-
-    // Apply random variation
-    constexpr float MOVEMENT_VARIATION = 1.5f; // Adjust as needed
-    new_cursor_pos.x += rand_range_f(-MOVEMENT_VARIATION, MOVEMENT_VARIATION);
-    new_cursor_pos.y += rand_range_f(-MOVEMENT_VARIATION, MOVEMENT_VARIATION);
-
-    move_mouse_to(new_cursor_pos.x, new_cursor_pos.y);
+    Vector2 predicted_position(lerpWithEase(cursor_pos.x, target_on_screen.x, t), lerpWithEase(cursor_pos.y, target_on_screen.y, t));
+    move_mouse_to(predicted_position.x, predicted_position.y);
 }
 
 void update_aimbot(Circle &circle, const int32_t audio_time) {
@@ -75,43 +71,39 @@ void update_aimbot(Circle &circle, const int32_t audio_time) {
     Vector2<float> cursor_pos = stableMousePosition();
 
     if (circle.type == HitObjectType::Circle) {
-        // Calculate a point around the circle
-        Vector2<float> direction = circle.position - cursor_pos;
-        float angle = atan2(direction.y, direction.x);
-        constexpr float ANGLE_VARIATION = 60.0f * (M_PI / 180.0f); // 60 degrees in radians
-        angle += rand_range_f(-ANGLE_VARIATION, ANGLE_VARIATION);
-
-        Vector2<float> target(circle.position.x + cos(angle) * distance, circle.position.y + sin(angle) * distance);
-
-        move_mouse_to_target(target, cursor_pos, t);
+        move_mouse_to_target(circle.position, cursor_pos, t);
     } else if (circle.type == HitObjectType::Slider) {
-        // Slider ball position
-        float slider_ball_x = *(float *)(circle.animation_ptr + OSU_ANIMATION_SLIDER_BALL_X_OFFSET);
-        float slider_ball_y = *(float *)(circle.animation_ptr + OSU_ANIMATION_SLIDER_BALL_Y_OFFSET);
+        uintptr_t osu_manager = *(uintptr_t *)(osu_manager_ptr);
+        if (!osu_manager) return;
+        uintptr_t hit_manager_ptr = *(uintptr_t *)(osu_manager + OSU_MANAGER_HIT_MANAGER_OFFSET);
+        if (!hit_manager_ptr) return;
+        uintptr_t hit_objects_list_ptr = *(uintptr_t *)(hit_manager_ptr + OSU_HIT_MANAGER_HIT_OBJECTS_LIST_OFFSET);
+        uintptr_t hit_objects_list_items_ptr = *(uintptr_t *)(hit_objects_list_ptr + 0x4);
+        uintptr_t hit_object_ptr = *(uintptr_t *)(hit_objects_list_items_ptr + 0x8 + 0x4 * current_beatmap.hit_object_idx);
+        uintptr_t animation_ptr = *(uintptr_t *)(hit_object_ptr + OSU_HIT_OBJECT_ANIMATION_OFFSET);
+        float slider_ball_x = *(float *)(animation_ptr + OSU_ANIMATION_SLIDER_BALL_X_OFFSET);
+        float slider_ball_y = *(float *)(animation_ptr + OSU_ANIMATION_SLIDER_BALL_Y_OFFSET);
         Vector2 slider_ball(slider_ball_x, slider_ball_y);
 
-        // Apply random variation
-        constexpr float SLIDER_VARIATION = 10.0f;
-        slider_ball.x += rand_range_f(-SLIDER_VARIATION, SLIDER_VARIATION);
-        slider_ball.y += rand_range_f(-SLIDER_VARIATION, SLIDER_VARIATION);
+        float slider_variation = 5.0f;
+        slider_ball.x += rand_range_f(-slider_variation, slider_variation);
+        slider_ball.y += rand_range_f(-slider_variation, slider_variation);
 
         move_mouse_to_target(slider_ball, cursor_pos, t);
     } else if (circle.type == HitObjectType::Spinner && audio_time >= circle.start_time) {
         auto &center = circle.position;
-        constexpr float RADIUS = 60.0f;
-
-        // Calculate a point around the spinner
-        constexpr float ANGLE_VARIATION = 60.0f * (M_PI / 180.0f); // 60 degrees in radians
+        constexpr float radius = 60.0f;
+        constexpr float PI = M_PI;
         static float angle = .0f;
-        angle += cfg_spins_per_minute / (3 * M_PI) * ImGui::GetIO().DeltaTime + rand_range_f(-ANGLE_VARIATION, ANGLE_VARIATION);
+        Vector2 next_point_on_circle(center.x + radius * cosf(angle), center.y + radius * sinf(angle));
 
-        Vector2<float> next_point_on_spinner(center.x + RADIUS * cos(angle), center.y + RADIUS * sin(angle));
+        float spinner_variation = 10.0f;
+        next_point_on_circle.x += rand_range_f(-spinner_variation, spinner_variation);
+        next_point_on_circle.y += rand_range_f(-spinner_variation, spinner_variation);
 
-        // Apply random variation
-        constexpr float SPINNER_VARIATION = 20.0f;
-        next_point_on_spinner.x += rand_range_f(-SPINNER_VARIATION, SPINNER_VARIATION);
-        next_point_on_spinner.y += rand_range_f(-SPINNER_VARIATION, SPINNER_VARIATION);
+        move_mouse_to_target(next_point_on_circle, cursor_pos, t);
 
-        move_mouse_to_target(next_point_on_spinner, cursor_pos, t);
+        float spin_variation = 0.1f;
+        angle += cfg_spins_per_minute / (3 * PI) * ImGui::GetIO().DeltaTime + rand_range_f(-spin_variation, spin_variation);
     }
 }
