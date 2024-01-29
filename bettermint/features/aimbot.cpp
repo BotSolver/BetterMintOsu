@@ -49,22 +49,23 @@ static inline Vector2<float> stableMousePosition() {
 
 static inline void move_mouse_to_target(const Vector2<float> &target, const Vector2<float> &cursor_pos, float t) {
     Vector2<float> direction = target - cursor_pos;
-    float distance = direction.length();
 
-    // Apply smoothing
-    constexpr float SMOOTHING_FACTOR = 0.8f;
-    float smoothing = pow(SMOOTHING_FACTOR, t);
+    // Calculate random angle within 60 degrees from the center
+    float angle_offset = rand_range_f(-30.0f, 30.0f);
+    float angle_radians = atan2f(direction.y, direction.x) + angle_offset;
+    Vector2<float> new_target(target.x + cosf(angle_radians), target.y + sinf(angle_radians));
 
-    // Calculate smoothed movement
-    Vector2<float> smoothed_direction = direction * (1.0f - smoothing);
-    Vector2<float> new_cursor_pos = cursor_pos + smoothed_direction;
+    // Calculate movement variation based on distance
+    float distance_to_target = distance(cursor_pos, new_target);
+    float movement_variation = distance_to_target * 0.05f; // Adjust as needed
 
-    // Apply random variation
-    constexpr float MOVEMENT_VARIATION = 1.5f; // Adjust as needed
-    new_cursor_pos.x += rand_range_f(-MOVEMENT_VARIATION, MOVEMENT_VARIATION);
-    new_cursor_pos.y += rand_range_f(-MOVEMENT_VARIATION, MOVEMENT_VARIATION);
+    // Apply random movement variation
+    new_target.x += rand_range_f(-movement_variation, movement_variation);
+    new_target.y += rand_range_f(-movement_variation, movement_variation);
 
-    move_mouse_to(new_cursor_pos.x, new_cursor_pos.y);
+    // Smoothly move the cursor towards the new target
+    Vector2<float> predicted_position(lerpWithEase(cursor_pos.x, new_target.x, t), lerpWithEase(cursor_pos.y, new_target.y, t));
+    move_mouse_to(predicted_position.x, predicted_position.y);
 }
 
 void update_aimbot(Circle &circle, const int32_t audio_time) {
@@ -75,10 +76,7 @@ void update_aimbot(Circle &circle, const int32_t audio_time) {
     Vector2<float> cursor_pos = stableMousePosition();
 
     if (circle.type == HitObjectType::Circle) {
-        float distance_to_circle = distance(circle.position, cursor_pos);
-        if (distance_to_circle <= current_beatmap.scaled_hit_object_radius) {
-            move_mouse_to_target(circle.position, cursor_pos, t);
-        }
+        move_mouse_to_target(circle.position, cursor_pos, t);
     } else if (circle.type == HitObjectType::Slider) {
         uintptr_t osu_manager = *(uintptr_t *)(osu_manager_ptr);
         if (!osu_manager) return;
@@ -92,10 +90,15 @@ void update_aimbot(Circle &circle, const int32_t audio_time) {
         float slider_ball_y = *(float *)(animation_ptr + OSU_ANIMATION_SLIDER_BALL_Y_OFFSET);
         Vector2 slider_ball(slider_ball_x, slider_ball_y);
 
-        float distance_to_slider_ball = distance(slider_ball, cursor_pos);
-        if (distance_to_slider_ball <= current_beatmap.scaled_hit_object_radius) {
-            move_mouse_to_target(slider_ball, cursor_pos, t);
-        }
+        // Calculate movement variation based on distance
+        float distance_to_slider_ball = distance(cursor_pos, slider_ball);
+        float slider_variation = distance_to_slider_ball * 0.05f; // Adjust as needed
+
+        // Apply random variation to slider ball position
+        slider_ball.x += rand_range_f(-slider_variation, slider_variation);
+        slider_ball.y += rand_range_f(-slider_variation, slider_variation);
+
+        move_mouse_to_target(slider_ball, cursor_pos, t);
     } else if (circle.type == HitObjectType::Spinner && audio_time >= circle.start_time) {
         auto &center = circle.position;
         constexpr float radius = 60.0f;
@@ -103,15 +106,18 @@ void update_aimbot(Circle &circle, const int32_t audio_time) {
         static float angle = .0f;
         Vector2 next_point_on_circle(center.x + radius * cosf(angle), center.y + radius * sinf(angle));
 
-        // Apply random variation
-        constexpr float SPINNER_VARIATION = 10.0f;
-        next_point_on_circle.x += rand_range_f(-SPINNER_VARIATION, SPINNER_VARIATION);
-        next_point_on_circle.y += rand_range_f(-SPINNER_VARIATION, SPINNER_VARIATION);
+        // Calculate movement variation based on distance
+        float distance_to_spinner = distance(cursor_pos, next_point_on_circle);
+        float spinner_variation = distance_to_spinner * 0.05f; // Adjust as needed
+
+        // Apply random variation to spinner position
+        next_point_on_circle.x += rand_range_f(-spinner_variation, spinner_variation);
+        next_point_on_circle.y += rand_range_f(-spinner_variation, spinner_variation);
 
         move_mouse_to_target(next_point_on_circle, cursor_pos, t);
 
         // Apply spinning variation
-        constexpr float SPIN_VARIATION = 0.1f;
+        constexpr float SPIN_VARIATION = 0.2f;
         angle += cfg_spins_per_minute / (3 * PI) * ImGui::GetIO().DeltaTime + rand_range_f(-SPIN_VARIATION, SPIN_VARIATION);
     }
 }
