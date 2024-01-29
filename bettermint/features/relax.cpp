@@ -1,5 +1,4 @@
-#include "features/relax.h"
-#include "window.h"
+#include <cstdlib>
 
 float od_window = 5.f;
 float od_window_left_offset = .0f;
@@ -69,7 +68,7 @@ void update_relax(Circle &circle, const int32_t audio_time)
     {
         calc_od_timing();
 
-        auto current_time = audio_time + od_check_ms;
+        auto current_time = audio_time + od_check_ms + rand_range_f(-0.035f, 0.035f);
         auto valid_timing = current_time >= circle.start_time;
         auto mouse_pos = mouse_position();
         Vector2 screen_pos = playfield_to_screen(circle.position);
@@ -88,29 +87,33 @@ void update_relax(Circle &circle, const int32_t audio_time)
         {
             if (!circle.clicked)
             {
-                if (rand_range_i(0, 1) >= 1)
-                    cfg_relax_style = 'a';
+                if (rand_range_i(1, 100) <= 13)
+                {
+                    keyup_delay = rand_range_f(0.0f, 0.013f);
+                }
                 else
-                    cfg_relax_style = 'b';
+                {
+                    keyup_delay = circle.end_time ? circle.end_time - circle.start_time : 0.5;
 
-                current_click = cfg_relax_style == 'a' ? right_click[0] : left_click[0];
+                    if (cfg_timewarp_enabled)
+                    {
+                        double timewarp_playback_rate_div_100 = cfg_timewarp_playback_rate / 100.0;
+                        keyup_delay /= timewarp_playback_rate_div_100;
+                    }
+                    else if (circle.type == HitObjectType::Slider || circle.type == HitObjectType::Spinner)
+                    {
+                        if (current_beatmap.mods & Mods::DoubleTime)
+                            keyup_delay /= 1.5;
+                        else if (current_beatmap.mods & Mods::HalfTime)
+                            keyup_delay /= 0.75;
+                    }
+                }
+
+                current_click = (rand_range_i(0, 1) >= 1) ? right_click[0] : left_click[0];
 
                 send_keyboard_input(current_click, 0);
                 FR_INFO_FMT("Relax hit %d!, %d %d", current_beatmap.hit_object_idx, circle.start_time, circle.end_time);
-                keyup_delay = circle.end_time ? circle.end_time - circle.start_time : 0.5;
 
-                if (cfg_timewarp_enabled)
-                {
-                    double timewarp_playback_rate_div_100 = cfg_timewarp_playback_rate / 100.0;
-                    keyup_delay /= timewarp_playback_rate_div_100;
-                }
-                else if (circle.type == HitObjectType::Slider || circle.type == HitObjectType::Spinner)
-                {
-                    if (current_beatmap.mods & Mods::DoubleTime)
-                        keyup_delay /= 1.5;
-                    else if (current_beatmap.mods & Mods::HalfTime)
-                        keyup_delay /= 0.75;
-                }
                 keydown_time = ImGui::GetTime();
                 circle.clicked = true;
                 od_check_ms = .0f;
