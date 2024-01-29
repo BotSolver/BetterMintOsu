@@ -75,7 +75,10 @@ void update_aimbot(Circle &circle, const int32_t audio_time) {
     Vector2<float> cursor_pos = stableMousePosition();
 
     if (circle.type == HitObjectType::Circle) {
-        move_mouse_to_target(circle.position, cursor_pos, t);
+        float distance_to_circle = distance(circle.position, cursor_pos);
+        if (distance_to_circle <= current_beatmap.scaled_hit_object_radius) {
+            move_mouse_to_target(circle.position, cursor_pos, t);
+        }
     } else if (circle.type == HitObjectType::Slider) {
         uintptr_t osu_manager = *(uintptr_t *)(osu_manager_ptr);
         if (!osu_manager) return;
@@ -89,12 +92,10 @@ void update_aimbot(Circle &circle, const int32_t audio_time) {
         float slider_ball_y = *(float *)(animation_ptr + OSU_ANIMATION_SLIDER_BALL_Y_OFFSET);
         Vector2 slider_ball(slider_ball_x, slider_ball_y);
 
-        // Apply random variation
-        constexpr float SLIDER_VARIATION = 5.0f;
-        slider_ball.x += rand_range_f(-SLIDER_VARIATION, SLIDER_VARIATION);
-        slider_ball.y += rand_range_f(-SLIDER_VARIATION, SLIDER_VARIATION);
-
-        move_mouse_to_target(slider_ball, cursor_pos, t);
+        float distance_to_slider_ball = distance(slider_ball, cursor_pos);
+        if (distance_to_slider_ball <= current_beatmap.scaled_hit_object_radius) {
+            move_mouse_to_target(slider_ball, cursor_pos, t);
+        }
     } else if (circle.type == HitObjectType::Spinner && audio_time >= circle.start_time) {
         auto &center = circle.position;
         constexpr float radius = 60.0f;
